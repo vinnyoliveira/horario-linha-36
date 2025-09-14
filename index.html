@@ -1,0 +1,601 @@
+
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linha 36 - Horários</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="./manifest.json">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* For smooth theme transitions */
+        *, *::before, *::after {
+            transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        }
+        .autocomplete-list {
+            scrollbar-width: thin;
+            scrollbar-color: #9ca3af #f3f4f6;
+        }
+        .dark .autocomplete-list {
+            scrollbar-color: #4b5563 #1f2937;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-black">
+    <div id="app-container" class="min-h-screen text-gray-800 dark:text-gray-200 p-4 sm:p-6 lg:p-8 flex flex-col items-center">
+        <div class="w-full max-w-4xl mx-auto">
+            <header class="flex justify-between items-center mb-8">
+                <div class="flex items-center gap-3">
+                    <div id="bus-icon-container"></div>
+                    <div>
+                        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                            Linha 36
+                        </h1>
+                        <p class="text-md text-gray-600 dark:text-gray-400 font-medium hidden sm:block">
+                            SEC. POETA A. ALEIXO ⇔ ALFARROBEIRAS
+                        </p>
+                    </div>
+                </div>
+                <div id="theme-toggle-container"></div>
+            </header>
+
+            <main>
+                <div id="journey-planner-container"></div>
+                <div id="favorites-container"></div>
+
+                <div id="error-container" class="mt-6"></div>
+
+                <div id="results-container" class="mt-8"></div>
+            </main>
+            
+            <footer class="text-center mt-12 text-sm text-gray-500 dark:text-gray-400">
+                <p>Horário de dias de escola. Em vigor desde 12 de abril de 2023.</p>
+                <p>VAMUS Algarve | Portimão Citybus</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DATA ---
+            const outboundSchool = {
+                stops: [
+                    { name: "Sec. Poeta António Aleixo 1", times: ["08:00", "08:45", "09:30", "10:15", "11:00", "11:45", "12:30", "13:15", "14:00", "14:45", "15:30", "16:15", "17:00", "17:45", "18:30", "19:15", "20:00"] },
+                    { name: "EB23 D. Martinho C. Branco 1", times: ["08:01", "08:46", "09:31", "10:16", "11:01", "11:46", "12:31", "13:16", "14:01", "14:46", "15:31", "16:16", "17:01", "17:46", "18:31", "19:16", "20:01"] },
+                    { name: "Campo de Jogos 1", times: ["08:03", "08:48", "09:33", "10:18", "11:03", "11:48", "12:33", "13:18", "14:03", "14:48", "15:33", "16:17", "17:03", "17:48", "18:33", "19:18", "20:03"] },
+                    { name: "R. Jaime Palhinha 1", times: ["08:04", "08:49", "09:34", "10:19", "11:04", "11:49", "12:34", "13:19", "14:04", "14:49", "15:34", "16:18", "17:04", "17:49", "18:34", "19:19", "20:04"] },
+                    { name: "Quinta das Francesinhas 1", times: ["08:05", "08:50", "09:35", "10:20", "11:05", "11:50", "12:35", "13:20", "14:05", "14:50", "15:35", "16:19", "17:05", "17:50", "18:35", "19:20", "20:05"] },
+                    { name: "Tugas 2", times: ["08:06", "08:51", "09:36", "10:21", "11:06", "11:51", "12:36", "13:21", "14:06", "14:51", "15:36", "16:20", "17:06", "17:51", "18:36", "19:21", "20:06"] },
+                    { name: "R. da Fraternidade 2", times: ["08:07", "08:52", "09:37", "10:22", "11:07", "11:52", "12:37", "13:22", "14:07", "14:52", "15:37", "16:21", "17:07", "17:52", "18:37", "19:22", "20:07"] },
+                    { name: "Casa das Artes 2", times: ["08:08", "08:53", "09:38", "10:23", "11:08", "11:53", "12:38", "13:23", "14:08", "14:53", "15:38", "16:22", "17:08", "17:53", "18:38", "19:23", "20:08"] },
+                    { name: "António Gedeão 2", times: ["08:09", "08:54", "09:39", "10:24", "11:09", "11:54", "12:39", "13:24", "14:09", "14:54", "15:39", "16:23", "17:09", "17:54", "18:39", "19:24", "20:09"] },
+                    { name: "Melvin Jones 1", times: ["08:10", "08:55", "09:40", "10:25", "11:10", "11:55", "12:40", "13:25", "14:10", "14:55", "15:40", "16:24", "17:10", "17:55", "18:40", "19:25", "20:10"] },
+                    { name: "EB1 Major David Neto 1", times: ["08:11", "08:56", "09:41", "10:26", "11:11", "11:56", "12:41", "13:26", "14:11", "14:56", "15:41", "16:25", "17:11", "17:56", "18:41", "19:26", "20:11"] },
+                    { name: "Eng. Amaro da Costa", times: ["08:11", "08:56", "09:41", "10:26", "11:11", "11:56", "12:41", "13:26", "14:11", "14:56", "15:41", "16:26", "17:11", "17:56", "18:41", "19:26", "20:11"] },
+                    { name: "Sec. Manuel T. Gomes 1", times: ["08:12", "08:57", "09:42", "10:27", "11:12", "11:57", "12:42", "13:27", "14:12", "14:57", "15:42", "16:27", "17:12", "17:57", "18:42", "19:27", "20:12"] },
+                    { name: "Rot. Pedra Mourinha 1", times: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null] },
+                    { name: "ALICOOP 1", times: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null] },
+                    { name: "Trav. da Pedra 2", times: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null] },
+                    { name: "JI/EB1 P. Mourinha / EB23 J. Fialho 2", times: ["08:17", "09:02", "09:47", "10:32", "11:17", "12:02", "12:47", "13:32", "14:17", "15:02", "15:47", "16:32", "17:17", "18:02", "18:47", "19:32", "20:17"] },
+                    { name: "Luís de Camões 2", times: ["08:18", "09:03", "09:48", "10:33", "11:18", "12:03", "12:48", "13:33", "14:18", "15:03", "15:48", "16:33", "17:18", "18:03", "18:48", "19:33", "20:18"] },
+                    { name: "Luís de Camões 4", times: ["08:19", "09:04", "09:49", "10:34", "11:19", "12:04", "12:49", "13:34", "14:19", "15:04", "15:49", "16:34", "17:19", "18:04", "18:49", "19:34", "20:19"] },
+                    { name: "EB23 Eng. Nuno Mergulhão", times: ["08:20", "09:05", "09:50", "10:35", "11:20", "12:05", "12:50", "13:35", "14:20", "15:05", "15:50", "16:35", "17:20", "18:05", "18:50", "19:35", "20:20"] },
+                    { name: "Rot. Pedra Mourinha 2", times: ["08:21", "09:06", "09:51", "10:36", "11:21", "12:06", "12:51", "13:36", "14:21", "15:06", "15:51", "16:36", "17:21", "18:06", "18:51", "19:36", "20:21"] },
+                    { name: "GNR 1", times: ["08:22", "09:07", "09:52", "10:37", "11:22", "12:07", "12:52", "13:37", "14:22", "15:07", "15:52", "16:29", "17:22", "18:07", "18:52", "19:37", "20:22"] },
+                    { name: "Pingo Doce 1", times: ["08:24", "09:09", "09:54", "10:39", "11:24", "12:09", "12:54", "13:39", "14:24", "15:09", "15:54", "16:31", "17:24", "18:09", "18:54", "19:39", null] },
+                    { name: "R. da Esperança 1", times: ["08:25", "09:10", "09:55", "10:40", "11:25", "12:10", "12:55", "13:40", "14:25", "15:10", "15:55", "16:32", "17:25", "18:10", "18:55", "19:40", null] },
+                    { name: "Aldeia Nova 1", times: ["08:25", "09:10", "09:55", "10:40", "11:25", "12:10", "12:55", "13:40", "14:25", "15:10", "15:55", "16:32", "17:25", "18:10", "18:55", "19:40", null] },
+                    { name: "Aldeia Nova / 125 2", times: ["08:26", "09:11", "09:56", "10:41", "11:26", "12:11", "12:56", "13:41", "14:26", "15:11", "15:56", "16:33", "17:26", "18:11", "18:56", "19:41", null] },
+                    { name: "Retail Center 2", times: ["08:27", "09:12", "09:57", "10:42", "11:27", "12:12", "12:57", "13:42", "14:27", "15:12", "15:57", "16:34", "17:27", "18:12", "18:57", "19:42", null] },
+                    { name: "CRACEP 2", times: ["08:28", "09:13", "09:58", "10:43", "11:28", "12:13", "12:58", "13:43", "14:28", "15:13", "15:58", "16:35", "17:28", "18:13", "18:58", "19:43", null] },
+                    { name: "JI/EB1 Coca Maravilhas 1", times: ["08:29", "09:14", "09:59", "10:44", "11:29", "12:14", "12:59", "13:44", "14:29", "15:14", "15:59", "16:36", "17:29", "18:14", "18:59", "19:44", null] },
+                    { name: "DOGEP 1", times: ["08:30", "09:15", "10:00", "10:45", "11:30", "12:15", "13:00", "13:45", "14:30", "15:15", "16:00", "16:37", "17:30", "18:15", "19:00", "19:45", null] },
+                    { name: "Zona Industrial 2", times: ["08:32", "09:17", "10:02", "10:47", "11:32", "12:17", "13:02", "13:47", "14:32", "15:17", "16:02", "16:39", "17:32", "18:17", "19:02", "19:47", null] },
+                    { name: "Cruz da Parteira 1", times: ["08:33", "09:18", "10:03", "10:48", "11:33", "12:18", "13:03", "13:48", "14:33", "15:18", "16:03", "16:40", "17:33", "18:18", "19:03", "19:48", null] },
+                    { name: "Aldeia do Carrasco / 125 1", times: ["08:34", "09:19", "10:04", "10:49", "11:34", "12:19", "13:04", "13:49", "14:34", "15:19", "16:04", "16:41", "17:34", "18:19", "19:04", "19:49", null] },
+                    { name: "Aldeia do Carrasco 1", times: ["08:35", "09:20", "10:05", "10:50", "11:35", "12:20", "13:05", "13:50", "14:35", "15:20", "16:05", "16:42", "17:35", "18:20", "19:05", "19:50", null] },
+                    { name: "R. Principal 1", times: ["08:35", "09:20", "10:05", "10:50", "11:35", "12:20", "13:05", "13:50", "14:35", "15:20", "16:05", "16:42", "17:35", "18:20", "19:05", "19:50", null] },
+                    { name: "Urb. Oásis Parque 1", times: ["08:36", "09:21", "10:06", "10:51", "11:36", "12:21", "13:06", "13:51", "14:36", "15:21", "16:06", "16:43", "17:36", "18:21", "19:06", "19:51", null] },
+                    { name: "Santinha 1", times: ["08:37", "09:22", "10:07", "10:52", "11:37", "12:22", "13:07", "13:52", "14:37", "15:22", "16:07", "16:44", "17:37", "18:22", "19:07", "19:52", null] },
+                    { name: "Chão das Donas 1", times: ["08:38", "09:23", "10:08", "10:53", "11:38", "12:23", "13:08", "13:53", "14:38", "15:23", "16:08", "16:45", "17:38", "18:23", "19:08", "19:53", null] },
+                    { name: "Viaduto 1", times: [null, "09:24", null, "10:54", null, "12:24", null, "13:54", null, "15:24", null, null, null, "18:24", null, "19:54", null] },
+                    { name: "Donalda 1", times: [null, "09:26", null, "10:56", null, "12:26", null, "13:56", null, "15:26", null, null, null, "18:26", null, "19:56", null] },
+                    { name: "Alfarrobeiras", times: [null, "09:27", null, "10:57", null, "12:27", null, "13:57", null, "15:27", null, null, null, "18:27", null, "19:57", null] },
+                ]
+            };
+            const inboundSchool = {
+                stops: [
+                    { name: "Alfarrobeiras", times: ["08:00", null, "09:30", null, "11:00", null, "12:30", null, "14:00", null, "15:30", null, "17:00", "17:45", "18:30", "19:15", "20:00"] },
+                    { name: "Donalda 2", times: ["08:01", null, "09:31", null, "11:01", null, "12:31", null, "14:01", null, "15:31", null, "17:00", "17:46", "18:31", "19:15", "20:01"] },
+                    { name: "Viaduto 2", times: ["08:03", null, "09:33", null, "11:03", null, "12:33", null, "14:03", null, "15:33", null, "17:00", "17:45", "18:33", "19:15", "20:03"] },
+                    { name: "Chão das Donas 2", times: ["08:04", "08:45", "09:34", "10:15", "11:04", "11:45", "12:34", "13:15", "14:04", "14:45", "15:34", "16:15", "17:00", "17:45", "18:34", "19:15", "20:04"] },
+                    { name: "Santinha 2", times: ["08:05", "08:46", "09:35", "10:16", "11:05", "11:46", "12:35", "13:16", "14:05", "14:46", "15:35", "16:16", "17:01", "17:46", "18:35", "19:16", "20:05"] },
+                    { name: "Urb. Oásis Parque 2", times: ["08:05", "08:46", "09:35", "10:16", "11:05", "11:46", "12:35", "13:16", "14:05", "14:46", "15:35", "16:16", "17:01", "17:46", "18:35", "19:16", "20:05"] },
+                    { name: "R. Principal 2", times: ["08:06", "08:47", "09:36", "10:17", "11:06", "11:47", "12:36", "13:17", "14:06", "14:47", "15:36", "16:17", "17:02", "17:47", "18:36", "19:17", "20:06"] },
+                    { name: "Aldeia do Carrasco 2", times: ["08:07", "08:48", "09:37", "10:18", "11:07", "11:48", "12:37", "13:18", "14:07", "14:48", "15:37", "16:18", "17:03", "17:48", "18:37", "19:18", "20:07"] },
+                    { name: "Cruz da Parteira 2", times: ["08:08", "08:49", "09:38", "10:19", "11:08", "11:49", "12:38", "13:19", "14:08", "14:49", "15:38", "16:19", "17:04", "17:49", "18:38", "19:19", "20:08"] },
+                    { name: "Zona Industrial 1", times: ["08:09", "08:50", "09:39", "10:20", "11:09", "11:50", "12:39", "13:20", "14:09", "14:50", "15:39", "16:20", "17:05", "17:50", "18:39", "19:20", "20:09"] },
+                    { name: "DOGEP 2", times: ["08:11", "08:52", "09:41", "10:22", "11:11", "11:52", "12:41", "13:22", "14:11", "14:52", "15:41", "16:22", "17:07", "17:52", "18:41", "19:22", "20:11"] },
+                    { name: "JI/EB1 Coca Maravilhas 2", times: ["08:12", "08:53", "09:42", "10:23", "11:12", "11:53", "12:42", "13:23", "14:12", "14:53", "15:42", "16:23", "17:08", "17:53", "18:42", "19:23", "20:12"] },
+                    { name: "CRACEP 1", times: ["08:13", "08:54", "09:43", "10:24", "11:13", "11:54", "12:43", "13:24", "14:13", "14:54", "15:43", "16:24", "17:09", "17:54", "18:43", "19:24", "20:13"] },
+                    { name: "Retail Center 1", times: ["08:14", "08:55", "09:44", "10:25", "11:14", "11:55", "12:44", "13:25", "14:14", "14:55", "15:44", "16:25", "17:10", "17:55", "18:44", "19:25", "20:14"] },
+                    { name: "Aldeia Nova / 125 1", times: ["08:15", "08:56", "09:45", "10:26", "11:15", "11:56", "12:45", "13:26", "14:15", "14:56", "15:45", "16:26", "17:11", "17:56", "18:45", "19:26", "20:15"] },
+                    { name: "Aldeia Nova 2", times: ["08:16", "08:57", "09:46", "10:27", "11:16", "11:57", "12:46", "13:27", "14:16", "14:57", "15:46", "16:27", "17:12", "17:57", "18:46", "19:27", "20:16"] },
+                    { name: "R. da Esperança 2", times: ["08:16", "08:57", "09:46", "10:27", "11:16", "11:57", "12:46", "13:27", "14:16", "14:57", "15:46", "16:27", "17:12", "17:57", "18:46", "19:27", "20:16"] },
+                    { name: "Pingo Doce 2", times: ["08:17", "08:58", "09:47", "10:28", "11:17", "11:58", "12:47", "13:28", "14:17", "14:58", "15:47", "16:28", "17:13", "17:58", "18:47", "19:28", "20:17"] },
+                    { name: "GNR 2", times: ["08:18", "08:59", "09:48", "10:29", "11:18", "11:59", "12:48", "13:29", "14:18", "14:59", "15:48", "16:29", "17:14", "17:59", "18:48", "19:29", "20:18"] },
+                    { name: "Rot. Pedra Mourinha 1", times: [null, null, null, null, null, null, null, null, null, null, null, null, "17:15", "18:00", "18:49", "19:30", "20:19"] },
+                    { name: "ALICOOP 1", times: [null, null, null, null, null, null, null, null, null, null, null, null, "17:16", "18:01", "18:50", "19:31", "20:20"] },
+                    { name: "Trav. da Pedra 2", times: [null, null, null, null, null, null, null, null, null, null, null, null, "17:17", "18:02", "18:51", "19:32", "20:21"] },
+                    { name: "JI/EB1 P. Mourinha / EB23 J. Fialho 2", times: [null, null, null, null, null, null, null, null, null, null, null, null, "17:18", "18:03", "18:52", "19:33", "20:22"] },
+                    { name: "Luís de Camões 2", times: [null, null, null, null, null, null, null, null, null, null, null, null, "17:19", "18:04", "18:53", "19:34", "20:23"] },
+                    { name: "Luís de Camões 4", times: [null, null, null, null, null, null, null, null, null, null, null, null, "17:20", "18:05", "18:54", "19:35", "20:24"] },
+                    { name: "EB23 Eng. Nuno Mergulhão", times: [null, null, null, null, null, null, null, null, null, null, null, null, "17:21", "18:06", "18:55", "19:36", "20:25"] },
+                    { name: "Rot. Pedra Mourinha 2", times: [null, null, null, null, null, null, null, null, null, null, null, null, "17:22", "18:07", "18:56", "19:37", "20:26"] },
+                    { name: "Finanças", times: ["08:29", "09:10", "09:59", "10:40", "11:29", "12:10", "12:59", "13:40", "14:29", "15:10", "15:59", "16:32", "17:25", "18:10", "18:59", "19:40", "20:29"] },
+                    { name: "Mercado (Av. Dr. F. Sá Carneiro) 1", times: ["08:30", "09:11", "10:00", "10:41", "11:30", "12:11", "13:00", "13:41", "14:30", "15:11", "16:00", "16:33", "17:26", "18:11", "19:00", "19:41", "20:30"] },
+                    { name: "Centro de Saúde", times: ["08:31", "09:12", "10:01", "10:42", "11:31", "12:12", "13:01", "13:42", "14:31", "15:12", "16:01", "16:34", "17:27", "18:12", "19:01", "19:42", "20:31"] },
+                    { name: "EB1 Major David Neto 2", times: ["08:32", "09:13", "10:02", "10:43", "11:32", "12:13", "13:02", "13:43", "14:32", "15:13", "16:02", "16:35", "17:28", "18:13", "18:54", "19:43", null] },
+                    { name: "Melvin Jones 2", times: ["08:33", "09:14", "10:03", "10:44", "11:33", "12:14", "13:03", "13:44", "14:33", "15:14", "16:03", "16:36", "17:29", "18:14", "18:55", "19:44", null] },
+                    { name: "António Gedeão 1", times: ["08:34", "09:15", "10:04", "10:45", "11:34", "12:15", "13:04", "13:45", "14:34", "15:15", "16:04", "16:37", "17:30", "18:15", "18:56", "19:45", null] },
+                    { name: "Casa das Artes 1", times: ["08:35", "09:16", "10:05", "10:46", "11:35", "12:16", "13:05", "13:46", "14:35", "15:16", "16:05", "16:38", "17:31", "18:16", "18:57", "19:46", null] },
+                    { name: "R. da Fraternidade 1", times: ["08:36", "09:17", "10:06", "10:47", "11:36", "12:17", "13:06", "13:47", "14:36", "15:17", "16:06", "16:39", "17:32", "18:17", "18:58", "19:47", null] },
+                    { name: "Tugas 1", times: ["08:37", "09:18", "10:07", "10:48", "11:37", "12:18", "13:07", "13:48", "14:37", "15:18", "16:07", "16:40", "17:33", "18:18", "18:59", "19:48", null] },
+                    { name: "Quinta das Francesinhas 2", times: ["08:38", "09:19", "10:08", "10:49", "11:38", "12:19", "13:08", "13:49", "14:38", "15:19", "16:08", "16:41", "17:34", "18:19", "19:00", "19:49", null] },
+                    { name: "R. Jaime Palhinha 2", times: ["08:39", "09:20", "10:09", "10:50", "11:39", "12:20", "13:09", "13:50", "14:39", "15:20", "16:09", "16:42", "17:35", "18:20", "19:01", "19:50", null] },
+                    { name: "Campo de Jogos 2", times: ["08:40", "09:21", "10:10", "10:51", "11:40", "12:21", "13:10", "13:51", "14:40", "15:21", "16:10", "16:43", "17:36", "18:21", "19:02", "19:51", null] },
+                    { name: "EB23 D. Martinho C. Branco 2", times: ["08:41", "09:22", "10:11", "10:52", "11:41", "12:22", "13:11", "13:52", "14:41", "15:22", "16:11", "16:44", "17:37", "18:22", "19:03", "19:52", null] },
+                    { name: "Sec. Poeta António Aleixo 1", times: ["08:42", "09:23", "10:12", "10:53", "11:42", "12:23", "13:12", "13:53", "14:42", "15:23", "16:12", "16:45", "17:38", "18:23", "19:04", "19:53", null] },
+                ]
+            };
+            const schedules = { escolar: { outbound: outboundSchool, inbound: inboundSchool } };
+            const allOutboundStops = outboundSchool.stops.map(s => s.name);
+            const allInboundStops = inboundSchool.stops.map(s => s.name);
+            const allStops = Array.from(new Set([...allOutboundStops, ...allInboundStops])).sort((a, b) => a.localeCompare(b));
+
+            // --- STATE ---
+            let fromStop = '';
+            let toStop = '';
+            let journeys = null;
+            let error = null;
+            let searchedStops = null;
+            let favorites = [];
+            let isLoading = false;
+            let favoritesLoading = true;
+            let viewMode = 'cards';
+            let theme = 'light';
+
+            // --- DOM ELEMENTS ---
+            const doc = document;
+            const journeyPlannerContainer = doc.getElementById('journey-planner-container');
+            const favoritesContainer = doc.getElementById('favorites-container');
+            const errorContainer = doc.getElementById('error-container');
+            const resultsContainer = doc.getElementById('results-container');
+            const themeToggleContainer = doc.getElementById('theme-toggle-container');
+            const busIconContainer = doc.getElementById('bus-icon-container');
+
+
+            // --- ICON & ILLUSTRATION TEMPLATES ---
+            const busIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 text-blue-600 dark:text-blue-500"><path d="M8 6v6"/><path d="M16 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg>`;
+            const sunIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+            const moonIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+            const swapIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-gray-600 dark:text-gray-400"><path d="M8 7l-4 4 4 4"/><path d="M4 11h16"/><path d="M16 17l4-4-4-4"/></svg>`;
+            const starIcon = (filled) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-all"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+            const trashIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
+            const clockIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+            const cardIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>`;
+            const listIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
+            const magazineIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"></path><path d="M7 8h10"></path><path d="M7 12h5"></path></svg>`;
+            const busStopIllustration = () => `<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><path d="M0 125 H 200 V 150 H 0 Z" class="fill-gray-200 dark:fill-gray-800"/><path d="M0 135 H 200" stroke-width="2" class="stroke-gray-300 dark:stroke-gray-700"/><path d="M10 142.5 H 30 M 50 142.5 H 70 M 90 142.5 H 110 M 130 142.5 H 150 M 170 142.5 H 190" stroke-width="3" stroke-dasharray="10 10" class="stroke-gray-400 dark:stroke-gray-600" stroke-linecap="round"/><path d="M140 50 V 125 M 180 50 V 125" stroke-width="4" class="stroke-gray-400 dark:stroke-gray-600" stroke-linecap="round"/><path d="M135 50 H 185" stroke-width="4" class="stroke-gray-400 dark:stroke-gray-600" stroke-linecap="round"/><path d="M138 52 L 132 45 H 188 L 182 52" class="fill-gray-400 dark:fill-gray-600"/><rect x="140" y="54" width="40" height="50" rx="5" class="fill-blue-200/50 dark:fill-blue-800/50"/><rect x="145" y="108" width="30" height="17" rx="3" class="fill-gray-300 dark:fill-gray-700"/><circle cx="160" cy="35" r="10" class="fill-blue-500"/><path d="M156 38 l 4 -6 l 4 6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M160 32 v -5" stroke-width="2" class="stroke-gray-400 dark:stroke-gray-600"/><path d="M160 32 l-4 -2 h 8 z" class="fill-gray-400 dark:fill-gray-600"/><circle cx="60" cy="100" r="8" class="fill-gray-400 dark:fill-gray-500"/><path d="M60 108 v 12 l -5 10" stroke-width="4" class="stroke-gray-400 dark:stroke-gray-500" fill="none" stroke-linecap="round"/><path d="M60 120 l 5 10" stroke-width="4" class="stroke-gray-400 dark:stroke-gray-500" fill="none" stroke-linecap="round"/><path d="M55 112 l 10 0" stroke-width="4" class="stroke-gray-400 dark:stroke-gray-500" fill="none" stroke-linecap="round"/></svg>`;
+            const noResultsIllustration = () => `<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><path d="M0 125 H 200 V 150 H 0 Z" class="fill-gray-200 dark:fill-gray-800"/><path d="M0 135 H 200" stroke-width="2" class="stroke-gray-300 dark:stroke-gray-700"/><rect x="30" y="80" width="70" height="45" rx="8" class="fill-blue-500"/><rect x="35" y="90" width="25" height="20" rx="3" class="fill-blue-200/80 dark:fill-blue-900/50"/><rect x="68" y="90" width="25" height="20" rx="3" class="fill-blue-200/80 dark:fill-blue-900/50"/><circle cx="45" cy="125" r="8" class="fill-gray-700 dark:fill-gray-600" stroke="white" stroke-width="2"/><circle cx="85" cy="125" r="8" class="fill-gray-700 dark:fill-gray-600" stroke="white" stroke-width="2"/><path d="M35 80 L 45 70 H 85 L 95 80" class="fill-blue-400"/><path d="M105 70 a 20 20 0 1 1 0.1 0 Z" class="fill-gray-300 dark:fill-gray-700"/><path d="M100 65 q 5 -10 10 -10 t 10 10 q 0 10 -10 10 t -10 -15" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="110" cy="88" r="2" fill="currentColor"/><path d="M120 110 C 140 115, 150 90, 160 90" stroke-width="3" fill="none" class="stroke-gray-400 dark:stroke-gray-600" stroke-dasharray="5 5"/><g transform="translate(160, 90) rotate(45)"><rect x="-10" y="-2.5" width="20" height="5" rx="2" class="fill-red-500"/><rect x="-2.5" y="-10" width="5" height="20" rx="2" class="fill-red-500"/></g></svg>`;
+
+
+            // --- CORE LOGIC ---
+            const findJourneys = (schedule, from, to) => {
+                const fromStopIndex = schedule.stops.findIndex(s => s.name === from);
+                const toStopIndex = schedule.stops.findIndex(s => s.name === to);
+                if (fromStopIndex === -1 || toStopIndex === -1 || fromStopIndex >= toStopIndex) return [];
+                const fromStopData = schedule.stops[fromStopIndex];
+                const toStopData = schedule.stops[toStopIndex];
+                const validJourneys = [];
+                for (let i = 0; i < fromStopData.times.length; i++) {
+                    const departureTime = fromStopData.times[i];
+                    const arrivalTime = toStopData.times[i];
+                    if (departureTime && arrivalTime) validJourneys.push({ departureTime, arrivalTime });
+                }
+                return validJourneys;
+            };
+
+            const handleSearch = () => {
+                if (!fromStop || !toStop) {
+                    error = 'Por favor, selecione uma paragem de partida e uma de chegada.';
+                    journeys = null;
+                    searchedStops = null;
+                    renderError();
+                    renderResults();
+                    return;
+                }
+                if (fromStop === toStop) {
+                    error = 'A paragem de partida e chegada não podem ser a mesma.';
+                    journeys = null;
+                    searchedStops = null;
+                    renderError();
+                    renderResults();
+                    return;
+                }
+
+                isLoading = true;
+                error = null;
+                journeys = null;
+                searchedStops = { from: fromStop, to: toStop };
+                renderError();
+                renderResults();
+
+                setTimeout(() => {
+                    const scheduleSet = schedules.escolar;
+                    const outboundJourneys = findJourneys(scheduleSet.outbound, fromStop, toStop);
+                    const inboundJourneys = findJourneys(scheduleSet.inbound, fromStop, toStop);
+                    const allFoundJourneys = [...outboundJourneys, ...inboundJourneys];
+                    allFoundJourneys.sort((a, b) => a.departureTime.localeCompare(b.departureTime));
+                    
+                    journeys = allFoundJourneys;
+                    isLoading = false;
+                    renderResults();
+                }, 700);
+            };
+
+
+            // --- RENDERING FUNCTIONS ---
+            const renderError = () => {
+                if (error && !isLoading) {
+                    errorContainer.innerHTML = `<div class="text-center text-red-600 font-medium bg-red-100 dark:bg-red-900/20 dark:text-red-400 border border-red-300 dark:border-red-500/30 p-3 rounded-lg">${error}</div>`;
+                } else {
+                    errorContainer.innerHTML = '';
+                }
+            };
+            
+            const renderJourneyResultCard = (journey, index) => `
+                <div class="bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-200/70 dark:border-gray-800 transform hover:-translate-y-1 transition-transform duration-200">
+                    <div class="p-4 text-center">
+                        <div class="flex items-center justify-between text-gray-500 dark:text-gray-400 text-sm mb-2"><span>Partida</span><span>Chegada</span></div>
+                        <div class="flex items-center justify-between font-bold text-2xl text-gray-900 dark:text-white tracking-tight">
+                            <span>${journey.departureTime}</span><span class="w-5 h-5 text-blue-500 dark:text-blue-400">${clockIcon()}</span><span>${journey.arrivalTime}</span>
+                        </div>
+                    </div>
+                </div>`;
+            
+            const renderJourneyResultListItem = (journey) => `
+                <div class="bg-white dark:bg-gray-900/80 p-4 rounded-lg shadow-sm border border-gray-200/80 dark:border-gray-800 flex items-center justify-between">
+                    <div class="text-left"><p class="font-bold text-lg text-gray-900 dark:text-white">${journey.departureTime}</p><p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[100px] sm:max-w-xs">${searchedStops.from}</p></div>
+                    <div class="flex flex-col items-center mx-4"><span class="w-5 h-5 text-gray-400 dark:text-gray-500">${clockIcon()}</span></div>
+                    <div class="text-right"><p class="font-bold text-lg text-gray-900 dark:text-white">${journey.arrivalTime}</p><p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[100px] sm:max-w-xs">${searchedStops.to}</p></div>
+                </div>`;
+
+            const renderJourneyResultMagazineItem = (journey) => `
+                <div class="bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-200/70 dark:border-gray-800 flex flex-col sm:flex-row">
+                    <div class="p-5 flex-1">
+                        <div class="flex justify-between items-start">
+                            <div><p class="text-sm text-gray-500 dark:text-gray-400">Partida</p><p class="font-extrabold text-4xl text-gray-900 dark:text-white tracking-tight">${journey.departureTime}</p><p class="text-sm text-gray-600 dark:text-gray-300 truncate mt-1 max-w-[200px]">${searchedStops.from}</p></div>
+                            <div class="text-right"><p class="text-sm text-gray-500 dark:text-gray-400">Chegada</p><p class="font-extrabold text-4xl text-gray-900 dark:text-white tracking-tight">${journey.arrivalTime}</p><p class="text-sm text-gray-600 dark:text-gray-300 truncate mt-1 max-w-[200px]">${searchedStops.to}</p></div>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-900/30 px-5 py-3 flex items-center justify-center"><div class="text-center"><span class="w-6 h-6 text-blue-600 dark:text-blue-400 mx-auto block">${clockIcon()}</span></div></div>
+                </div>`;
+                
+            const renderSkeletons = () => {
+                const skeletonCount = 8;
+                let skeletonsHTML = '';
+                const cardSkeleton = `<div class="bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-200/70 dark:border-gray-800 animate-pulse"><div class="p-4 text-center"><div class="flex items-center justify-between mb-2"><div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div><div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div></div><div class="flex items-center justify-between"><div class="h-7 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div><div class="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded-full"></div><div class="h-7 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div></div></div></div>`;
+                const listSkeleton = `<div class="bg-white dark:bg-gray-900/80 p-4 rounded-lg shadow-sm border border-gray-200/80 dark:border-gray-800 flex items-center justify-between animate-pulse"><div class="text-left w-1/3"><div class="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-1"></div><div class="h-3 bg-gray-200 dark:bg-gray-600 rounded w-full"></div></div><div class="flex flex-col items-center mx-4"><div class="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded-full"></div></div><div class="text-right w-1/3 flex flex-col items-end"><div class="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-1"></div><div class="h-3 bg-gray-200 dark:bg-gray-600 rounded w-full"></div></div></div>`;
+                const magazineSkeleton = `<div class="bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-200/70 dark:border-gray-800 flex flex-col sm:flex-row animate-pulse"><div class="p-5 flex-1"><div class="flex justify-between items-start"><div><div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-1"></div><div class="h-10 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div><div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div></div><div class="text-right flex flex-col items-end"><div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-1"></div><div class="h-10 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div><div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div></div></div></div><div class="bg-gray-100 dark:bg-gray-800/50 px-5 py-3 flex items-center justify-center"><div class="text-center"><div class="w-6 h-6 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto"></div></div></div></div>`;
+                
+                const skeletonMap = { cards: cardSkeleton, list: listSkeleton, magazine: magazineSkeleton };
+                for (let i = 0; i < skeletonCount; i++) skeletonsHTML += skeletonMap[viewMode];
+                return skeletonsHTML;
+            };
+
+            const renderResults = () => {
+                let content = '';
+
+                // Header section
+                if (searchedStops && !isLoading) {
+                    const isFav = favorites.some(fav => fav.from === searchedStops.from && fav.to === searchedStops.to);
+                    const hasJourneys = journeys && journeys.length > 0;
+                    content += `
+                        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+                            <div class="flex items-center gap-3">
+                                <h2 class="text-2xl font-bold text-gray-800 dark:text-white text-center">${hasJourneys ? 'Horários Encontrados' : 'Nenhum Horário'}</h2>
+                                ${hasJourneys ? `<button id="toggle-favorite-btn" title="${isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" class="flex-shrink-0"><span class="w-7 h-7 text-yellow-400 dark:text-yellow-500 block">${starIcon(isFav)}</span></button>` : ''}
+                            </div>
+                            ${hasJourneys ? `
+                                <div id="view-mode-switcher" class="flex items-center bg-gray-200/80 dark:bg-gray-800/80 rounded-full p-1">
+                                    <button data-mode="cards" class="p-2 rounded-full transition-colors capitalize ${viewMode === 'cards' ? 'bg-white dark:bg-blue-500 text-blue-600 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}"><span class="w-5 h-5 block">${cardIcon()}</span></button>
+                                    <button data-mode="list" class="p-2 rounded-full transition-colors capitalize ${viewMode === 'list' ? 'bg-white dark:bg-blue-500 text-blue-600 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}"><span class="w-5 h-5 block">${listIcon()}</span></button>
+                                    <button data-mode="magazine" class="p-2 rounded-full transition-colors capitalize ${viewMode === 'magazine' ? 'bg-white dark:bg-blue-500 text-blue-600 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}"><span class="w-5 h-5 block">${magazineIcon()}</span></button>
+                                </div>` : ''}
+                        </div>`;
+                }
+
+                // Skeletons
+                if (isLoading) {
+                    const gridClass = viewMode === 'cards' ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4' : (viewMode === 'list' ? 'space-y-3' : 'space-y-4');
+                    content += `<div class="pt-8 ${gridClass}">${renderSkeletons()}</div>`;
+                } 
+                // Results or Empty States
+                else {
+                    if (searchedStops) {
+                        if (journeys && journeys.length > 0) {
+                            const gridClass = viewMode === 'cards' ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4' : (viewMode === 'list' ? 'space-y-2' : 'space-y-4');
+                            const renderFunc = { cards: renderJourneyResultCard, list: renderJourneyResultListItem, magazine: renderJourneyResultMagazineItem }[viewMode];
+                            content += `<div class="${gridClass}">${journeys.map(renderFunc).join('')}</div>`;
+                        } else {
+                            content += `<div class="text-center py-12 px-6"><div class="max-w-xs mx-auto text-gray-400 dark:text-gray-600 mb-6">${noResultsIllustration()}</div><h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Nenhum horário direto encontrado</h3><p class="text-gray-600 dark:text-gray-400 max-w-md mx-auto">Não conseguimos encontrar uma rota direta de "${searchedStops.from}" para "${searchedStops.to}". Tente alterar as paragens.</p></div>`;
+                        }
+                    } else {
+                        content += `<div class="text-center py-12 px-6"><div class="max-w-xs mx-auto text-gray-400 dark:text-gray-600 mb-6">${busStopIllustration()}</div><h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Planeie a sua Viagem</h3><p class="text-gray-600 dark:text-gray-400 max-w-md mx-auto">Selecione as paragens de partida e chegada para ver todos os horários disponíveis.</p></div>`;
+                    }
+                }
+                resultsContainer.innerHTML = content;
+                
+                // Add event listeners for newly created elements
+                if (doc.getElementById('toggle-favorite-btn')) {
+                    doc.getElementById('toggle-favorite-btn').addEventListener('click', toggleFavorite);
+                }
+                if (doc.getElementById('view-mode-switcher')) {
+                    doc.getElementById('view-mode-switcher').addEventListener('click', (e) => {
+                        const button = e.target.closest('button');
+                        if(button && button.dataset.mode) {
+                            viewMode = button.dataset.mode;
+                            renderResults();
+                        }
+                    });
+                }
+            };
+            
+            // --- FAVORITES MANAGEMENT ---
+            const saveFavorites = (newFavorites) => {
+                try {
+                    localStorage.setItem('bus36Favorites', JSON.stringify(newFavorites));
+                    favorites = newFavorites;
+                } catch (e) { console.error("Failed to save favorites", e); }
+            };
+
+            const toggleFavorite = () => {
+                if (!searchedStops) return;
+                const isFav = favorites.some(fav => fav.from === searchedStops.from && fav.to === searchedStops.to);
+                let newFavorites;
+                if (isFav) {
+                    newFavorites = favorites.filter(fav => fav.from !== searchedStops.from || fav.to !== searchedStops.to);
+                } else {
+                    newFavorites = [...favorites, { id: `${searchedStops.from}-${searchedStops.to}`, ...searchedStops }];
+                }
+                saveFavorites(newFavorites);
+                renderFavorites();
+                renderResults(); // Re-render to update the star icon
+            };
+            
+            const removeFavorite = (id) => {
+                saveFavorites(favorites.filter(fav => fav.id !== id));
+                renderFavorites();
+            };
+            
+            const selectFavorite = (fav) => {
+                fromStop = fav.from;
+                toStop = fav.to;
+                // Re-render planner to show new values and trigger search
+                renderJourneyPlanner();
+                handleSearch();
+            };
+
+            const renderFavorites = () => {
+                if (favoritesLoading) {
+                    favoritesContainer.innerHTML = `
+                    <div class="mt-6 bg-white dark:bg-gray-900/50 rounded-2xl shadow-lg p-6 border border-gray-200/80 dark:border-gray-700/50 animate-pulse">
+                        <div class="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mx-auto mb-4"></div>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 rounded-lg"><div class="flex-1"><div class="h-5 bg-gray-200 dark:bg-gray-700/50 rounded w-3/4"></div></div><div class="w-5 h-5 bg-gray-200 dark:bg-gray-700/50 rounded-full"></div></div>
+                            <div class="flex items-center justify-between p-3 rounded-lg"><div class="flex-1"><div class="h-5 bg-gray-200 dark:bg-gray-700/50 rounded w-3/4"></div></div><div class="w-5 h-5 bg-gray-200 dark:bg-gray-700/50 rounded-full"></div></div>
+                        </div>
+                    </div>`;
+                    return;
+                }
+                if (favorites.length === 0) {
+                    favoritesContainer.innerHTML = '';
+                    return;
+                }
+
+                const favoritesHTML = favorites.map(fav => `
+                    <div class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors duration-200">
+                        <button data-action="select" class="flex-1 text-left truncate">
+                            <span class="font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">${fav.from}</span>
+                            <span class="mx-2 text-gray-400 dark:text-gray-500">→</span>
+                            <span class="font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">${fav.to}</span>
+                        </button>
+                        <button data-action="remove" class="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30" aria-label="Remover rota de ${fav.from} para ${fav.to}">
+                            <span class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-red-500 block">${trashIcon()}</span>
+                        </button>
+                    </div>`).join('');
+
+                favoritesContainer.innerHTML = `
+                    <div class="mt-6 bg-white dark:bg-gray-900/50 rounded-2xl shadow-lg p-6 border border-gray-200/80 dark:border-gray-700/50">
+                        <div class="flex justify-center items-center gap-2 mb-4">
+                            <span class="w-5 h-5 text-yellow-500">${starIcon(true)}</span>
+                            <h3 class="text-lg font-bold text-gray-800 dark:text-white text-center">Rotas Favoritas</h3>
+                        </div>
+                        <div id="favorites-list" class="space-y-2">${favoritesHTML}</div>
+                    </div>`;
+
+                doc.getElementById('favorites-list').addEventListener('click', e => {
+                    const button = e.target.closest('button');
+                    if (!button) return;
+                    const favDiv = button.parentElement;
+                    const index = Array.from(favDiv.parentElement.children).indexOf(favDiv);
+                    const fav = favorites[index];
+
+                    if (button.dataset.action === 'select') selectFavorite(fav);
+                    if (button.dataset.action === 'remove') removeFavorite(fav.id);
+                });
+            };
+
+            // --- THEME MANAGEMENT ---
+            const applyTheme = () => {
+                const root = doc.documentElement;
+                if (theme === 'dark') root.classList.add('dark');
+                else root.classList.remove('dark');
+                localStorage.setItem('theme', theme);
+                renderThemeToggle();
+            };
+
+            const toggleTheme = () => {
+                theme = theme === 'light' ? 'dark' : 'light';
+                applyTheme();
+            };
+
+            const renderThemeToggle = () => {
+                themeToggleContainer.innerHTML = `<button id="theme-toggle-btn" class="p-2 rounded-full bg-gray-200/80 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700">${theme === 'light' ? moonIcon() : sunIcon()}</button>`;
+                doc.getElementById('theme-toggle-btn').addEventListener('click', toggleTheme);
+            };
+
+            // --- JOURNEY PLANNER & AUTOCOMPLETE ---
+            const renderJourneyPlanner = () => {
+                const createAutocomplete = (id, label, value) => `
+                    <div class="flex-1 w-full relative">
+                        <label for="${id}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">${label}</label>
+                        <div class="relative">
+                            <input type="text" id="${id}" value="${value}" placeholder="Escreva o nome da paragem" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition" autocomplete="off"/>
+                            ${value ? `<button data-clear-for="${id}" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300" aria-label="Limpar seleção"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg></button>`: ''}
+                        </div>
+                        <ul id="${id}-list" class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden autocomplete-list"></ul>
+                    </div>`;
+
+                journeyPlannerContainer.innerHTML = `
+                    <div class="bg-white dark:bg-gray-900/50 rounded-2xl shadow-lg p-6 border border-gray-200/80 dark:border-gray-700/50">
+                        <div class="flex flex-col sm:flex-row items-center gap-4">
+                            ${createAutocomplete('from-stop', 'Partida', fromStop)}
+                            <button id="swap-btn" class="p-2 mt-4 sm:mt-6 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-200 hover:rotate-180" aria-label="Inverter partida e chegada">${swapIcon()}</button>
+                            ${createAutocomplete('to-stop', 'Chegada', toStop)}
+                        </div>
+                    </div>`;
+                
+                attachPlannerListeners();
+            };
+            
+            const handleAutocomplete = (input, list) => {
+                const query = input.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const filteredStops = allStops.filter(stop => stop.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(query));
+                
+                if (filteredStops.length > 0) {
+                    list.innerHTML = filteredStops.map(stop => `<li class="px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/50 cursor-pointer text-gray-800 dark:text-gray-200">${stop}</li>`).join('');
+                } else {
+                    list.innerHTML = `<li class="px-4 py-2 text-gray-500 dark:text-gray-400">Nenhuma paragem encontrada.</li>`;
+                }
+                list.classList.remove('hidden');
+            };
+
+            const attachPlannerListeners = () => {
+                const fromInput = doc.getElementById('from-stop');
+                const toInput = doc.getElementById('to-stop');
+                const fromList = doc.getElementById('from-stop-list');
+                const toList = doc.getElementById('to-stop-list');
+                
+                const setupAutocomplete = (input, list, stateKey) => {
+                    input.addEventListener('input', () => handleAutocomplete(input, list));
+                    input.addEventListener('focus', () => handleAutocomplete(input, list));
+                    list.addEventListener('click', (e) => {
+                        if (e.target.tagName === 'LI' && e.target.textContent !== 'Nenhuma paragem encontrada.') {
+                            input.value = e.target.textContent;
+                            if (stateKey === 'from') fromStop = input.value;
+                            if (stateKey === 'to') toStop = input.value;
+                            list.classList.add('hidden');
+                            if(fromStop && toStop) handleSearch();
+                            renderJourneyPlanner(); // Re-render to show clear button
+                        }
+                    });
+                };
+
+                setupAutocomplete(fromInput, fromList, 'from');
+                setupAutocomplete(toInput, toList, 'to');
+                
+                doc.getElementById('swap-btn').addEventListener('click', () => {
+                    const currentFrom = fromStop;
+                    fromStop = toStop;
+                    toStop = currentFrom;
+                    renderJourneyPlanner();
+                    if(fromStop && toStop) handleSearch();
+                });
+
+                journeyPlannerContainer.addEventListener('click', (e) => {
+                    const clearButton = e.target.closest('[data-clear-for]');
+                    if (clearButton) {
+                        const targetId = clearButton.dataset.clearFor;
+                        if (targetId === 'from-stop') fromStop = '';
+                        if (targetId === 'to-stop') toStop = '';
+                        renderJourneyPlanner();
+                    }
+                });
+            };
+            
+            doc.addEventListener('click', (e) => {
+                if (!e.target.closest('#journey-planner-container')) {
+                    doc.getElementById('from-stop-list').classList.add('hidden');
+                    doc.getElementById('to-stop-list').classList.add('hidden');
+                }
+            });
+
+
+            // --- INITIALIZATION ---
+            const initializeApp = () => {
+                // 1. Load Theme
+                const storedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                theme = storedTheme ? storedTheme : (prefersDark ? 'dark' : 'light');
+                applyTheme();
+                
+                // 2. Load Favorites
+                setTimeout(() => {
+                    try {
+                        const storedFavorites = localStorage.getItem('bus36Favorites');
+                        if (storedFavorites) favorites = JSON.parse(storedFavorites);
+                    } catch (e) {
+                        console.error("Failed to load favorites", e);
+                        favorites = [];
+                    } finally {
+                        favoritesLoading = false;
+                        renderFavorites();
+                    }
+                }, 500);
+
+                // 3. Render initial UI
+                busIconContainer.innerHTML = busIcon();
+                renderThemeToggle();
+                renderJourneyPlanner();
+                renderFavorites();
+                renderResults();
+            };
+
+            initializeApp();
+            
+            // Register Service Worker for PWA
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(registration => {
+                            console.log('Service Worker registered successfully:', registration.scope);
+                        })
+                        .catch(error => {
+                            console.log('Service Worker registration failed:', error);
+                        });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
