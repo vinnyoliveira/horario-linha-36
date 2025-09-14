@@ -24,46 +24,56 @@
         }
         .autocomplete-list {
             scrollbar-width: thin;
-            scrollbar-color: #9ca3af #f3f4f6;
-        }
-        .dark .autocomplete-list {
             scrollbar-color: #4b5563 #1f2937;
         }
         body.modal-open {
             overflow: hidden;
         }
+        @keyframes drive {
+            0% { transform: translate(0, 0) rotate(0); }
+            25% { transform: translate(-1px, 1px) rotate(-1deg); }
+            75% { transform: translate(1px, -1px) rotate(1deg); }
+            100% { transform: translate(0, 0) rotate(0); }
+        }
+        #bus-icon-container svg {
+            animation: drive 4s ease-in-out infinite;
+        }
+        #bottom-nav-container button svg, 
+        #view-mode-switcher button svg,
+        #toggle-favorite-btn svg {
+            transition: transform 0.2s ease-in-out;
+        }
+        #bottom-nav-container button:hover svg, 
+        #view-mode-switcher button:hover svg,
+        #toggle-favorite-btn:hover svg {
+            transform: scale(1.15);
+        }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-black">
-    <div id="app-container" class="min-h-screen text-gray-800 dark:text-gray-200 p-4 sm:p-6 lg:p-8 flex flex-col items-center pb-28">
+<body class="bg-black dark">
+    <div id="app-container" class="min-h-screen text-gray-200 p-4 flex flex-col items-center pb-24">
         <div class="w-full max-w-4xl mx-auto">
-            <header class="flex justify-between items-center mb-8">
+            <header class="flex justify-between items-center mb-6">
                 <div class="flex items-center gap-3">
                     <div id="bus-icon-container"></div>
                     <div>
-                        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                             Linha 36
                         </h1>
-                        <p class="text-md text-gray-600 dark:text-gray-400 font-medium hidden sm:block">
+                        <p class="text-md text-gray-400 font-medium hidden sm:block">
                             SEC. POETA A. ALEIXO ⇔ ALFARROBEIRAS
                         </p>
                     </div>
                 </div>
-                <div id="theme-toggle-container"></div>
             </header>
 
             <main>
-                <div id="favorites-container" class="mt-8"></div>
+                <div id="favorites-container" class="mt-6"></div>
 
                 <div id="error-container" class="mt-6"></div>
 
-                <div id="results-container" class="mt-8"></div>
+                <div id="results-container" class="mt-6"></div>
             </main>
-            
-            <footer class="text-center mt-12 text-sm text-gray-500 dark:text-gray-400">
-                <p>Horário de dias de escola. Em vigor desde 12 de abril de 2023.</p>
-                <p>VAMUS Algarve | Portimão Citybus</p>
-            </footer>
         </div>
     </div>
 
@@ -179,7 +189,6 @@
             let isLoading = false;
             let favoritesLoading = true;
             let viewMode = 'cards';
-            let theme = 'light';
             let selectedJourney = null;
             let nextJourneyId = null;
 
@@ -188,17 +197,14 @@
             const favoritesContainer = doc.getElementById('favorites-container');
             const errorContainer = doc.getElementById('error-container');
             const resultsContainer = doc.getElementById('results-container');
-            const themeToggleContainer = doc.getElementById('theme-toggle-container');
             const busIconContainer = doc.getElementById('bus-icon-container');
             const bottomNavContainer = doc.getElementById('bottom-nav-container');
             const searchModalContainer = doc.getElementById('search-modal-container');
 
 
             // --- ICON & ILLUSTRATION TEMPLATES ---
-            const busIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 text-blue-600 dark:text-blue-500"><path d="M8 6v6"/><path d="M16 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg>`;
-            const sunIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
-            const moonIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
-            const swapIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-gray-600 dark:text-gray-400"><path d="M8 7l-4 4 4 4"/><path d="M4 11h16"/><path d="M16 17l4-4-4-4"/></svg>`;
+            const busIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 text-blue-500"><path d="M8 6v6"/><path d="M16 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg>`;
+            const swapIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-gray-400"><path d="M8 7l-4 4 4 4"/><path d="M4 11h16"/><path d="M16 17l4-4-4-4"/></svg>`;
             const starIcon = (filled) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-all"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
             const trashIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
             const clockIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
@@ -206,8 +212,8 @@
             const listIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
             const magazineIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"></path><path d="M7 8h10"></path><path d="M7 12h5"></path></svg>`;
             const searchIcon = () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`;
-            const busStopIllustration = () => `<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><path d="M0 125 H 200 V 150 H 0 Z" class="fill-gray-200 dark:fill-gray-800"/><path d="M0 135 H 200" stroke-width="2" class="stroke-gray-300 dark:stroke-gray-700"/><path d="M10 142.5 H 30 M 50 142.5 H 70 M 90 142.5 H 110 M 130 142.5 H 150 M 170 142.5 H 190" stroke-width="3" stroke-dasharray="10 10" class="stroke-gray-400 dark:stroke-gray-600" stroke-linecap="round"/><path d="M140 50 V 125 M 180 50 V 125" stroke-width="4" class="stroke-gray-400 dark:stroke-gray-600" stroke-linecap="round"/><path d="M135 50 H 185" stroke-width="4" class="stroke-gray-400 dark:stroke-gray-600" stroke-linecap="round"/><path d="M138 52 L 132 45 H 188 L 182 52" class="fill-gray-400 dark:fill-gray-600"/><rect x="140" y="54" width="40" height="50" rx="5" class="fill-blue-200/50 dark:fill-blue-800/50"/><rect x="145" y="108" width="30" height="17" rx="3" class="fill-gray-300 dark:fill-gray-700"/><circle cx="160" cy="35" r="10" class="fill-blue-500"/><path d="M156 38 l 4 -6 l 4 6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M160 32 v -5" stroke-width="2" class="stroke-gray-400 dark:stroke-gray-600"/><path d="M160 32 l-4 -2 h 8 z" class="fill-gray-400 dark:fill-gray-600"/><circle cx="60" cy="100" r="8" class="fill-gray-400 dark:fill-gray-500"/><path d="M60 108 v 12 l -5 10" stroke-width="4" class="stroke-gray-400 dark:stroke-gray-500" fill="none" stroke-linecap="round"/><path d="M60 120 l 5 10" stroke-width="4" class="stroke-gray-400 dark:stroke-gray-500" fill="none" stroke-linecap="round"/><path d="M55 112 l 10 0" stroke-width="4" class="stroke-gray-400 dark:stroke-gray-500" fill="none" stroke-linecap="round"/></svg>`;
-            const noResultsIllustration = () => `<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><path d="M0 125 H 200 V 150 H 0 Z" class="fill-gray-200 dark:fill-gray-800"/><path d="M0 135 H 200" stroke-width="2" class="stroke-gray-300 dark:stroke-gray-700"/><rect x="30" y="80" width="70" height="45" rx="8" class="fill-blue-500"/><rect x="35" y="90" width="25" height="20" rx="3" class="fill-blue-200/80 dark:fill-blue-900/50"/><rect x="68" y="90" width="25" height="20" rx="3" class="fill-blue-200/80 dark:fill-blue-900/50"/><circle cx="45" cy="125" r="8" class="fill-gray-700 dark:fill-gray-600" stroke="white" stroke-width="2"/><circle cx="85" cy="125" r="8" class="fill-gray-700 dark:fill-gray-600" stroke="white" stroke-width="2"/><path d="M35 80 L 45 70 H 85 L 95 80" class="fill-blue-400"/><path d="M105 70 a 20 20 0 1 1 0.1 0 Z" class="fill-gray-300 dark:fill-gray-700"/><path d="M100 65 q 5 -10 10 -10 t 10 10 q 0 10 -10 10 t -10 -15" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="110" cy="88" r="2" fill="currentColor"/><path d="M120 110 C 140 115, 150 90, 160 90" stroke-width="3" fill="none" class="stroke-gray-400 dark:stroke-gray-600" stroke-dasharray="5 5"/><g transform="translate(160, 90) rotate(45)"><rect x="-10" y="-2.5" width="20" height="5" rx="2" class="fill-red-500"/><rect x="-2.5" y="-10" width="5" height="20" rx="2" class="fill-red-500"/></g></svg>`;
+            const busStopIllustration = () => `<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><path d="M0 125 H 200 V 150 H 0 Z" class="fill-gray-800"/><path d="M0 135 H 200" stroke-width="2" class="stroke-gray-700"/><path d="M10 142.5 H 30 M 50 142.5 H 70 M 90 142.5 H 110 M 130 142.5 H 150 M 170 142.5 H 190" stroke-width="3" stroke-dasharray="10 10" class="stroke-gray-600" stroke-linecap="round"/><path d="M140 50 V 125 M 180 50 V 125" stroke-width="4" class="stroke-gray-600" stroke-linecap="round"/><path d="M135 50 H 185" stroke-width="4" class="stroke-gray-600" stroke-linecap="round"/><path d="M138 52 L 132 45 H 188 L 182 52" class="fill-gray-600"/><rect x="140" y="54" width="40" height="50" rx="5" class="fill-blue-800/50"/><rect x="145" y="108" width="30" height="17" rx="3" class="fill-gray-700"/><circle cx="160" cy="35" r="10" class="fill-blue-500"/><path d="M156 38 l 4 -6 l 4 6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M160 32 v -5" stroke-width="2" class="stroke-gray-600"/><path d="M160 32 l-4 -2 h 8 z" class="fill-gray-600"/><circle cx="60" cy="100" r="8" class="fill-gray-500"/><path d="M60 108 v 12 l -5 10" stroke-width="4" class="stroke-gray-500" fill="none" stroke-linecap="round"/><path d="M60 120 l 5 10" stroke-width="4" class="stroke-gray-500" fill="none" stroke-linecap="round"/><path d="M55 112 l 10 0" stroke-width="4" class="stroke-gray-500" fill="none" stroke-linecap="round"/></svg>`;
+            const noResultsIllustration = () => `<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><path d="M0 125 H 200 V 150 H 0 Z" class="fill-gray-800"/><path d="M0 135 H 200" stroke-width="2" class="stroke-gray-700"/><rect x="30" y="80" width="70" height="45" rx="8" class="fill-blue-500"/><rect x="35" y="90" width="25" height="20" rx="3" class="fill-blue-900/50"/><rect x="68" y="90" width="25" height="20" rx="3" class="fill-blue-900/50"/><circle cx="45" cy="125" r="8" class="fill-gray-600" stroke="white" stroke-width="2"/><circle cx="85" cy="125" r="8" class="fill-gray-600" stroke="white" stroke-width="2"/><path d="M35 80 L 45 70 H 85 L 95 80" class="fill-blue-400"/><path d="M105 70 a 20 20 0 1 1 0.1 0 Z" class="fill-gray-700"/><path d="M100 65 q 5 -10 10 -10 t 10 10 q 0 10 -10 10 t -10 -15" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="110" cy="88" r="2" fill="currentColor"/><path d="M120 110 C 140 115, 150 90, 160 90" stroke-width="3" fill="none" class="stroke-gray-600" stroke-dasharray="5 5"/><g transform="translate(160, 90) rotate(45)"><rect x="-10" y="-2.5" width="20" height="5" rx="2" class="fill-red-500"/><rect x="-2.5" y="-10" width="5" height="20" rx="2" class="fill-red-500"/></g></svg>`;
 
 
             // --- CORE LOGIC ---
@@ -281,7 +287,7 @@
             // --- RENDERING FUNCTIONS ---
             const renderError = () => {
                 if (error && !isLoading) {
-                    errorContainer.innerHTML = `<div class="text-center text-red-600 font-medium bg-red-100 dark:bg-red-900/20 dark:text-red-400 border border-red-300 dark:border-red-500/30 p-3 rounded-lg">${error}</div>`;
+                    errorContainer.innerHTML = `<div class="text-center text-red-400 font-medium bg-red-900/20 border border-red-500/30 p-3 rounded-lg">${error}</div>`;
                 } else {
                     errorContainer.innerHTML = '';
                 }
@@ -306,18 +312,18 @@
                     return `
                         <li class="flex items-center">
                             <div class="flex flex-col items-center mr-4">
-                                <div class="w-4 h-4 rounded-full border-2 ${isFirst || isLast ? 'bg-blue-500 border-blue-500' : 'border-gray-400 dark:border-gray-600'}"></div>
-                                ${!isLast ? '<div class="w-0.5 h-8 bg-gray-300 dark:bg-gray-700"></div>' : ''}
+                                <div class="w-4 h-4 rounded-full border-2 ${isFirst || isLast ? 'bg-blue-500 border-blue-500' : 'border-gray-600'}"></div>
+                                ${!isLast ? '<div class="w-0.5 h-8 bg-gray-700"></div>' : ''}
                             </div>
                             <div class="flex-1 flex justify-between items-center py-1">
-                                <span class="text-gray-800 dark:text-gray-200 ${isFirst || isLast ? 'font-bold' : 'font-medium'}">${stop.name}</span>
-                                <span class="font-mono text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">${time}</span>
+                                <span class="text-gray-200 ${isFirst || isLast ? 'font-bold' : 'font-medium'}">${stop.name}</span>
+                                <span class="font-mono text-sm text-gray-400 bg-gray-800 px-2 py-0.5 rounded">${time}</span>
                             </div>
                         </li>
                     `;
                 }).join('');
 
-                return `<div class="p-4 bg-slate-50 dark:bg-black/50">
+                return `<div class="p-4 bg-black/50">
                             <ul class="space-y-0">${stopsHTML}</ul>
                         </div>`;
             };
@@ -326,12 +332,12 @@
                 const journeyId = `${journey.schedule}-${journey.timeIndex}`;
                 const isNext = nextJourneyId === journeyId;
                 return `
-                <div class="relative bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-200/70 dark:border-gray-800 transform hover:-translate-y-1 transition-transform duration-200 cursor-pointer" data-journey-id="${journeyId}">
+                <div class="relative bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-800 transform hover:-translate-y-1 transition-transform duration-200 cursor-pointer" data-journey-id="${journeyId}">
                     ${isNext ? '<div class="absolute top-2 right-2 bg-blue-500/90 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-full z-10" style="opacity: 0.85;">Próximo</div>' : ''}
-                    <div class="p-4 text-center">
-                        <div class="flex items-center justify-between text-gray-500 dark:text-gray-400 text-sm mb-2"><span>Partida</span><span>Chegada</span></div>
-                        <div class="flex items-center justify-between font-bold text-2xl text-gray-900 dark:text-white tracking-tight">
-                            <span>${journey.departureTime}</span><span class="w-5 h-5 text-blue-500 dark:text-blue-400">${clockIcon()}</span><span>${journey.arrivalTime}</span>
+                    <div class="p-3 text-center">
+                        <div class="flex items-center justify-between text-gray-400 text-sm mb-2"><span>Partida</span><span>Chegada</span></div>
+                        <div class="flex items-center justify-between font-bold text-xl text-white tracking-tight">
+                            <span>${journey.departureTime}</span><span class="w-5 h-5 text-blue-400">${clockIcon()}</span><span>${journey.arrivalTime}</span>
                         </div>
                     </div>
                 </div>`;
@@ -341,12 +347,12 @@
                 const journeyId = `${journey.schedule}-${journey.timeIndex}`;
                 const isNext = nextJourneyId === journeyId;
                 return `
-                <div class="relative bg-white dark:bg-gray-900/80 rounded-lg shadow-sm border border-gray-200/80 dark:border-gray-800 overflow-hidden">
-                    <div class="p-4 flex items-center justify-between cursor-pointer" data-journey-id="${journeyId}">
+                <div class="relative bg-gray-900/80 rounded-lg shadow-sm border border-gray-800 overflow-hidden">
+                    <div class="p-3 flex items-center justify-between cursor-pointer" data-journey-id="${journeyId}">
                         ${isNext ? '<div class="absolute top-2 right-2 bg-blue-500/90 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-full z-10" style="opacity: 0.85;">Próximo</div>' : ''}
-                        <div class="text-left"><p class="font-bold text-lg text-gray-900 dark:text-white">${journey.departureTime}</p><p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[100px] sm:max-w-xs">${searchedStops.from}</p></div>
-                        <div class="flex flex-col items-center mx-4"><span class="w-5 h-5 text-gray-400 dark:text-gray-500">${clockIcon()}</span></div>
-                        <div class="text-right"><p class="font-bold text-lg text-gray-900 dark:text-white">${journey.arrivalTime}</p><p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[100px] sm:max-w-xs">${searchedStops.to}</p></div>
+                        <div class="text-left"><p class="font-bold text-base text-white">${journey.departureTime}</p><p class="text-xs text-gray-400 truncate max-w-[100px] sm:max-w-xs">${searchedStops.from}</p></div>
+                        <div class="flex flex-col items-center mx-4"><span class="w-5 h-5 text-gray-500">${clockIcon()}</span></div>
+                        <div class="text-right"><p class="font-bold text-base text-white">${journey.arrivalTime}</p><p class="text-xs text-gray-400 truncate max-w-[100px] sm:max-w-xs">${searchedStops.to}</p></div>
                     </div>
                 </div>`;
             };
@@ -355,16 +361,16 @@
                 const journeyId = `${journey.schedule}-${journey.timeIndex}`;
                 const isNext = nextJourneyId === journeyId;
                 return `
-                <div class="relative bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-200/70 dark:border-gray-800">
+                <div class="relative bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-800">
                     ${isNext ? '<div class="absolute top-2 right-2 bg-blue-500/90 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-full z-10" style="opacity: 0.85;">Próximo</div>' : ''}
                     <div class="flex flex-col sm:flex-row cursor-pointer" data-journey-id="${journeyId}">
                         <div class="p-5 flex-1">
                             <div class="flex justify-between items-start">
-                                <div><p class="text-sm text-gray-500 dark:text-gray-400">Partida</p><p class="font-extrabold text-4xl text-gray-900 dark:text-white tracking-tight">${journey.departureTime}</p><p class="text-sm text-gray-600 dark:text-gray-300 truncate mt-1 max-w-[200px]">${searchedStops.from}</p></div>
-                                <div class="text-right"><p class="text-sm text-gray-500 dark:text-gray-400">Chegada</p><p class="font-extrabold text-4xl text-gray-900 dark:text-white tracking-tight">${journey.arrivalTime}</p><p class="text-sm text-gray-600 dark:text-gray-300 truncate mt-1 max-w-[200px]">${searchedStops.to}</p></div>
+                                <div><p class="text-sm text-gray-400">Partida</p><p class="font-extrabold text-4xl text-white tracking-tight">${journey.departureTime}</p><p class="text-sm text-gray-300 truncate mt-1 max-w-[200px]">${searchedStops.from}</p></div>
+                                <div class="text-right"><p class="text-sm text-gray-400">Chegada</p><p class="font-extrabold text-4xl text-white tracking-tight">${journey.arrivalTime}</p><p class="text-sm text-gray-300 truncate mt-1 max-w-[200px]">${searchedStops.to}</p></div>
                             </div>
                         </div>
-                        <div class="bg-blue-50 dark:bg-blue-900/30 px-5 py-3 flex items-center justify-center"><div class="text-center text-blue-600 dark:text-blue-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg></div></div>
+                        <div class="bg-blue-900/30 px-5 py-3 flex items-center justify-center"><div class="text-center text-blue-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg></div></div>
                     </div>
                 </div>`;
             };
@@ -372,9 +378,9 @@
             const renderSkeletons = () => {
                 const skeletonCount = 8;
                 let skeletonsHTML = '';
-                const cardSkeleton = `<div class="bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-200/70 dark:border-gray-800 animate-pulse"><div class="p-4 text-center"><div class="flex items-center justify-between mb-2"><div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div><div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div></div><div class="flex items-center justify-between"><div class="h-7 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div><div class="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded-full"></div><div class="h-7 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div></div></div></div>`;
-                const listSkeleton = `<div class="bg-white dark:bg-gray-900/80 p-4 rounded-lg shadow-sm border border-gray-200/80 dark:border-gray-800 flex items-center justify-between animate-pulse"><div class="text-left w-1/3"><div class="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-1"></div><div class="h-3 bg-gray-200 dark:bg-gray-600 rounded w-full"></div></div><div class="flex flex-col items-center mx-4"><div class="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded-full"></div></div><div class="text-right w-1/3 flex flex-col items-end"><div class="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-1"></div><div class="h-3 bg-gray-200 dark:bg-gray-600 rounded w-full"></div></div></div>`;
-                const magazineSkeleton = `<div class="bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-200/70 dark:border-gray-800 flex flex-col sm:flex-row animate-pulse"><div class="p-5 flex-1"><div class="flex justify-between items-start"><div><div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-1"></div><div class="h-10 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div><div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div></div><div class="text-right flex flex-col items-end"><div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-1"></div><div class="h-10 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div><div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div></div></div></div><div class="bg-gray-100 dark:bg-gray-800/50 px-5 py-3 flex items-center justify-center"><div class="text-center"><div class="w-6 h-6 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto"></div></div></div></div>`;
+                const cardSkeleton = `<div class="bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-800 animate-pulse"><div class="p-3 text-center"><div class="flex items-center justify-between mb-2"><div class="h-4 bg-gray-700 rounded w-1/3"></div><div class="h-4 bg-gray-700 rounded w-1/3"></div></div><div class="flex items-center justify-between"><div class="h-7 bg-gray-600 rounded w-1/3"></div><div class="w-5 h-5 bg-gray-600 rounded-full"></div><div class="h-7 bg-gray-600 rounded w-1/3"></div></div></div></div>`;
+                const listSkeleton = `<div class="bg-gray-900/80 p-3 rounded-lg shadow-sm border border-gray-800 flex items-center justify-between animate-pulse"><div class="text-left w-1/3"><div class="h-6 bg-gray-700 rounded w-1/2 mb-1"></div><div class="h-3 bg-gray-600 rounded w-full"></div></div><div class="flex flex-col items-center mx-4"><div class="w-5 h-5 bg-gray-600 rounded-full"></div></div><div class="text-right w-1/3 flex flex-col items-end"><div class="h-6 bg-gray-700 rounded w-1/2 mb-1"></div><div class="h-3 bg-gray-600 rounded w-full"></div></div></div>`;
+                const magazineSkeleton = `<div class="bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-800 flex flex-col sm:flex-row animate-pulse"><div class="p-5 flex-1"><div class="flex justify-between items-start"><div><div class="h-4 bg-gray-700 rounded w-16 mb-1"></div><div class="h-10 bg-gray-600 rounded w-24 mb-2"></div><div class="h-4 bg-gray-700 rounded w-32"></div></div><div class="text-right flex flex-col items-end"><div class="h-4 bg-gray-700 rounded w-16 mb-1"></div><div class="h-10 bg-gray-600 rounded w-24 mb-2"></div><div class="h-4 bg-gray-700 rounded w-32"></div></div></div></div><div class="bg-gray-800/50 px-5 py-3 flex items-center justify-center"><div class="text-center"><div class="w-6 h-6 bg-gray-700 rounded-full mx-auto"></div></div></div></div>`;
                 
                 const skeletonMap = { cards: cardSkeleton, list: listSkeleton, magazine: magazineSkeleton };
                 for (let i = 0; i < skeletonCount; i++) skeletonsHTML += skeletonMap[viewMode];
@@ -389,16 +395,16 @@
                     const isFav = favorites.some(fav => fav.from === searchedStops.from && fav.to === searchedStops.to);
                     const hasJourneys = journeys && journeys.length > 0;
                     content += `
-                        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
                             <div class="flex items-center gap-3">
-                                <h2 class="text-2xl font-bold text-gray-800 dark:text-white text-center">${hasJourneys ? 'Horários Encontrados' : 'Nenhum Horário'}</h2>
-                                ${hasJourneys ? `<button id="toggle-favorite-btn" title="${isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" class="flex-shrink-0"><span class="w-7 h-7 text-yellow-400 dark:text-yellow-500 block">${starIcon(isFav)}</span></button>` : ''}
+                                <h2 class="text-2xl font-bold text-white text-center">${hasJourneys ? 'Horários Encontrados' : 'Nenhum Horário'}</h2>
+                                ${hasJourneys ? `<button id="toggle-favorite-btn" title="${isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" class="flex-shrink-0"><span class="w-7 h-7 text-yellow-500 block">${starIcon(isFav)}</span></button>` : ''}
                             </div>
                             ${hasJourneys ? `
-                                <div id="view-mode-switcher" class="flex items-center bg-gray-200/80 dark:bg-gray-800/80 rounded-full p-1">
-                                    <button data-mode="cards" class="p-2 rounded-full transition-colors capitalize ${viewMode === 'cards' ? 'bg-white dark:bg-blue-500 text-blue-600 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}"><span class="w-5 h-5 block">${cardIcon()}</span></button>
-                                    <button data-mode="list" class="p-2 rounded-full transition-colors capitalize ${viewMode === 'list' ? 'bg-white dark:bg-blue-500 text-blue-600 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}"><span class="w-5 h-5 block">${listIcon()}</span></button>
-                                    <button data-mode="magazine" class="p-2 rounded-full transition-colors capitalize ${viewMode === 'magazine' ? 'bg-white dark:bg-blue-500 text-blue-600 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'}"><span class="w-5 h-5 block">${magazineIcon()}</span></button>
+                                <div id="view-mode-switcher" class="flex items-center bg-gray-800/80 rounded-full p-1">
+                                    <button data-mode="cards" class="p-2 rounded-full transition-colors capitalize ${viewMode === 'cards' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-400 hover:text-white'}"><span class="w-5 h-5 block">${cardIcon()}</span></button>
+                                    <button data-mode="list" class="p-2 rounded-full transition-colors capitalize ${viewMode === 'list' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-400 hover:text-white'}"><span class="w-5 h-5 block">${listIcon()}</span></button>
+                                    <button data-mode="magazine" class="p-2 rounded-full transition-colors capitalize ${viewMode === 'magazine' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-400 hover:text-white'}"><span class="w-5 h-5 block">${magazineIcon()}</span></button>
                                 </div>` : ''}
                         </div>`;
                 }
@@ -416,10 +422,10 @@
                             const renderFunc = { cards: renderJourneyResultCard, list: renderJourneyResultListItem, magazine: renderJourneyResultMagazineItem }[viewMode];
                             content += `<div class="${gridClass}">${journeys.map(renderFunc).join('')}</div>`;
                         } else {
-                            content += `<div class="text-center py-12 px-6"><div class="max-w-xs mx-auto text-gray-400 dark:text-gray-600 mb-6">${noResultsIllustration()}</div><h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Nenhum horário direto encontrado</h3><p class="text-gray-600 dark:text-gray-400 max-w-md mx-auto">Não conseguimos encontrar uma rota direta de "${searchedStops.from}" para "${searchedStops.to}". Tente alterar as paragens.</p></div>`;
+                            content += `<div class="text-center py-12 px-6"><div class="max-w-xs mx-auto text-gray-600 mb-6">${noResultsIllustration()}</div><h3 class="text-xl font-bold text-white mb-2">Nenhum horário direto encontrado</h3><p class="text-gray-400 max-w-md mx-auto">Não conseguimos encontrar uma rota direta de "${searchedStops.from}" para "${searchedStops.to}". Tente alterar as paragens.</p></div>`;
                         }
                     } else if (favorites.length === 0) {
-                        content += `<div class="text-center py-12 px-6"><div class="max-w-xs mx-auto text-gray-400 dark:text-gray-600 mb-6">${busStopIllustration()}</div><h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Planeie a sua Viagem</h3><p class="text-gray-600 dark:text-gray-400 max-w-md mx-auto">Use o botão "Procurar" na barra inferior para encontrar horários entre paragens.</p></div>`;
+                        content += `<div class="text-center py-12 px-6"><div class="max-w-xs mx-auto text-gray-600 mb-6">${busStopIllustration()}</div><h3 class="text-xl font-bold text-white mb-2">Planeie a sua Viagem</h3><p class="text-gray-400 max-w-md mx-auto">Use o botão "Procurar" na barra inferior para encontrar horários entre paragens.</p></div>`;
                     }
                 }
                 resultsContainer.innerHTML = content;
@@ -459,17 +465,17 @@
                 <div id="modal-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" style="opacity:0; transition: opacity 200ms ease-out;"></div>
                 <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
                     <div class="flex min-h-full items-center justify-center p-4 text-center">
-                        <div id="modal-panel" class="relative w-full max-w-lg transform overflow-hidden rounded-2xl bg-white dark:bg-gray-900 text-left align-middle shadow-xl" style="opacity:0; transform: scale(0.95); transition: all 200ms ease-out;">
+                        <div id="modal-panel" class="relative w-full max-w-lg transform overflow-hidden rounded-2xl bg-gray-900 text-left align-middle shadow-xl" style="opacity:0; transform: scale(0.95); transition: all 200ms ease-out;">
                             <div class="p-6">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <h3 class="text-lg font-bold leading-6 text-gray-900 dark:text-white" id="modal-title">Detalhes da Viagem</h3>
-                                        <div class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                        <h3 class="text-lg font-bold leading-6 text-white" id="modal-title">Detalhes da Viagem</h3>
+                                        <div class="mt-2 text-sm text-gray-400">
                                             <p>${searchedStops.from} → ${searchedStops.to}</p>
                                             <p class="font-bold">${selectedJourney.departureTime} - ${selectedJourney.arrivalTime}</p>
                                         </div>
                                     </div>
-                                    <button id="modal-close-btn" type="button" class="p-1 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-200" aria-label="Fechar">
+                                    <button id="modal-close-btn" type="button" class="p-1 rounded-full text-gray-400 hover:bg-gray-800 hover:text-gray-200" aria-label="Fechar">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                     </button>
                                 </div>
@@ -501,7 +507,7 @@
                 <div id="search-modal-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" style="opacity:0; transition: opacity 200ms ease-out;"></div>
                 <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="search-modal-title" role="dialog" aria-modal="true">
                     <div class="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4 text-center">
-                        <div id="search-modal-panel" class="relative w-full max-w-4xl transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-slate-50 dark:bg-black text-left align-middle shadow-xl" style="opacity:0; transform: translateY(20px); transition: all 200ms ease-out;">
+                        <div id="search-modal-panel" class="relative w-full max-w-4xl transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-black text-left align-middle shadow-xl" style="opacity:0; transform: translateY(20px); transition: all 200ms ease-out;">
                              <div id="search-modal-content" class="p-4"></div>
                         </div>
                     </div>
@@ -588,7 +594,7 @@
 
             const renderFavorites = () => {
                 if (favoritesLoading) {
-                    favoritesContainer.innerHTML = `<div class="mt-6 bg-white dark:bg-gray-900/50 rounded-2xl shadow-lg p-6 border border-gray-200/80 dark:border-gray-700/50 animate-pulse"><div class="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mx-auto mb-4"></div><div class="space-y-3"><div class="flex items-center justify-between p-3 rounded-lg"><div class="flex-1"><div class="h-5 bg-gray-200 dark:bg-gray-700/50 rounded w-3/4"></div></div><div class="w-5 h-5 bg-gray-200 dark:bg-gray-700/50 rounded-full"></div></div><div class="flex items-center justify-between p-3 rounded-lg"><div class="flex-1"><div class="h-5 bg-gray-200 dark:bg-gray-700/50 rounded w-3/4"></div></div><div class="w-5 h-5 bg-gray-200 dark:bg-gray-700/50 rounded-full"></div></div></div></div>`;
+                    favoritesContainer.innerHTML = `<div class="mt-6 bg-gray-900/50 rounded-2xl shadow-lg p-4 border border-gray-700/50 animate-pulse"><div class="h-6 bg-gray-700 rounded w-1/2 mx-auto mb-3"></div><div class="space-y-3"><div class="flex items-center justify-between p-2 rounded-lg"><div class="flex-1"><div class="h-5 bg-gray-700/50 rounded w-3/4"></div></div><div class="w-5 h-5 bg-gray-700/50 rounded-full"></div></div><div class="flex items-center justify-between p-2 rounded-lg"><div class="flex-1"><div class="h-5 bg-gray-700/50 rounded w-3/4"></div></div><div class="w-5 h-5 bg-gray-700/50 rounded-full"></div></div></div></div>`;
                     return;
                 }
                 if (favorites.length === 0) {
@@ -597,22 +603,22 @@
                 }
 
                 const favoritesHTML = favorites.map(fav => `
-                    <div class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors duration-200">
+                    <div class="group flex items-center justify-between p-2 rounded-lg hover:bg-gray-800/50 transition-colors duration-200">
                         <button data-action="select" class="flex-1 text-left truncate">
-                            <span class="font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">${fav.from}</span>
-                            <span class="mx-2 text-gray-400 dark:text-gray-500">→</span>
-                            <span class="font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">${fav.to}</span>
+                            <span class="font-medium text-gray-300 group-hover:text-blue-400">${fav.from}</span>
+                            <span class="mx-2 text-gray-500">→</span>
+                            <span class="font-medium text-gray-300 group-hover:text-blue-400">${fav.to}</span>
                         </button>
-                        <button data-action="remove" class="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30" aria-label="Remover rota de ${fav.from} para ${fav.to}">
-                            <span class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-red-500 block">${trashIcon()}</span>
+                        <button data-action="remove" class="p-2 rounded-full hover:bg-red-900/30" aria-label="Remover rota de ${fav.from} para ${fav.to}">
+                            <span class="w-5 h-5 text-gray-400 group-hover:text-red-500 block">${trashIcon()}</span>
                         </button>
                     </div>`).join('');
 
                 favoritesContainer.innerHTML = `
-                    <div class="mt-6 bg-white dark:bg-gray-900/50 rounded-2xl shadow-lg p-6 border border-gray-200/80 dark:border-gray-700/50">
-                        <div class="flex justify-center items-center gap-2 mb-4">
+                    <div class="mt-6 bg-gray-900/50 rounded-2xl shadow-lg p-4 border border-gray-700/50">
+                        <div class="flex justify-center items-center gap-2 mb-3">
                             <span class="w-5 h-5 text-yellow-500">${starIcon(true)}</span>
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white text-center">Rotas Favoritas</h3>
+                            <h3 class="text-lg font-bold text-white text-center">Rotas Favoritas</h3>
                         </div>
                         <div id="favorites-list" class="space-y-2">${favoritesHTML}</div>
                     </div>`;
@@ -629,36 +635,18 @@
                 });
             };
 
-            // --- THEME MANAGEMENT ---
-            const applyTheme = () => {
-                const root = doc.documentElement;
-                if (theme === 'dark') root.classList.add('dark');
-                else root.classList.remove('dark');
-                localStorage.setItem('theme', theme);
-                renderThemeToggle();
-            };
-
-            const toggleTheme = () => {
-                theme = theme === 'light' ? 'dark' : 'light';
-                applyTheme();
-            };
-
-            const renderThemeToggle = () => {
-                themeToggleContainer.innerHTML = `<button id="theme-toggle-btn" class="p-2 rounded-full bg-gray-200/80 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700">${theme === 'light' ? moonIcon() : sunIcon()}</button>`;
-                doc.getElementById('theme-toggle-btn').addEventListener('click', toggleTheme);
-            };
-
             // --- UI LAYOUT & NAVIGATION ---
             const renderBottomNav = () => {
                 bottomNavContainer.innerHTML = `
-                    <div class="flex justify-center items-stretch bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-full shadow-lg max-w-sm mx-auto p-2 gap-2 border border-gray-200/80 dark:border-gray-700/50">
-                        <button id="nav-search-btn" class="flex-grow flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-blue-500 hover:bg-blue-600 text-white font-semibold transition-colors" aria-label="Procurar nova rota">
-                            <span class="w-6 h-6">${searchIcon()}</span>
+                    <div class="flex justify-center items-stretch bg-zinc-900/80 backdrop-blur-lg rounded-full shadow-2xl shadow-black/30 max-w-[280px] mx-auto p-1.5 gap-2 border border-zinc-700">
+                        <button id="nav-search-btn" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-zinc-300 hover:bg-zinc-800 hover:text-white font-medium transition-all" aria-label="Procurar nova rota">
+                            <span class="w-5 h-5">${searchIcon()}</span>
                             <span>Procurar</span>
                         </button>
-                        <div class="w-px bg-gray-200 dark:bg-gray-700"></div>
-                        <button id="nav-favorites-btn" class="flex items-center justify-center gap-2 px-4 py-3 rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 font-semibold transition-colors" aria-label="Ver rotas favoritas">
-                            <span class="w-6 h-6 text-yellow-500">${starIcon(true)}</span>
+                        <div class="w-px bg-zinc-700 my-2"></div>
+                        <button id="nav-favorites-btn" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-zinc-300 hover:bg-zinc-800 hover:text-white font-medium transition-all" aria-label="Ver rotas favoritas">
+                            <span class="w-5 h-5 text-yellow-500">${starIcon(true)}</span>
+                            <span>Favoritos</span>
                         </button>
                     </div>`;
                 doc.getElementById('nav-search-btn').addEventListener('click', openSearchModal);
@@ -666,8 +654,6 @@
                      const favContainer = doc.getElementById('favorites-container');
                      if (favContainer && favContainer.innerHTML.trim() !== '') {
                         favContainer.scrollIntoView();
-                     } else {
-                        // Optionally, show a message or do nothing if there are no favorites
                      }
                 });
             };
@@ -676,19 +662,19 @@
             const renderJourneyPlanner = (container) => {
                 const createAutocomplete = (id, label, value) => `
                     <div class="flex-1 w-full relative">
-                        <label for="${id}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">${label}</label>
+                        <label for="${id}" class="block text-sm font-medium text-gray-300 mb-1">${label}</label>
                         <div class="relative">
-                            <input type="text" id="${id}" value="${value}" placeholder="Escreva o nome da paragem" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition" autocomplete="off"/>
-                            ${value ? `<button data-clear-for="${id}" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300" aria-label="Limpar seleção"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg></button>`: ''}
+                            <input type="text" id="${id}" value="${value}" placeholder="Escreva o nome da paragem" class="w-full p-3 border border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-800 text-gray-100 placeholder-gray-500 transition" autocomplete="off"/>
+                            ${value ? `<button data-clear-for="${id}" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-300" aria-label="Limpar seleção"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg></button>`: ''}
                         </div>
-                        <ul id="${id}-list" class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden autocomplete-list"></ul>
+                        <ul id="${id}-list" class="absolute z-20 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden autocomplete-list"></ul>
                     </div>`;
 
                 container.innerHTML = `
-                    <div class="bg-white dark:bg-gray-900/50 rounded-2xl shadow-lg p-6 border border-gray-200/80 dark:border-gray-700/50">
+                    <div class="bg-gray-900/50 rounded-2xl shadow-lg p-6 border border-gray-700/50">
                         <div class="flex flex-col sm:flex-row items-center gap-4">
                             ${createAutocomplete('from-stop', 'Partida', fromStop)}
-                            <button id="swap-btn" class="p-2 mt-4 sm:mt-6 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-200 hover:rotate-180" aria-label="Inverter partida e chegada">${swapIcon()}</button>
+                            <button id="swap-btn" class="p-2 mt-4 sm:mt-6 bg-gray-800 rounded-full hover:bg-gray-700 transition-transform duration-200 hover:rotate-180" aria-label="Inverter partida e chegada">${swapIcon()}</button>
                             ${createAutocomplete('to-stop', 'Chegada', toStop)}
                         </div>
                     </div>`;
@@ -701,9 +687,9 @@
                 const filteredStops = allStops.filter(stop => stop.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(query));
                 
                 if (filteredStops.length > 0) {
-                    list.innerHTML = filteredStops.map(stop => `<li class="px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/50 cursor-pointer text-gray-800 dark:text-gray-200">${stop}</li>`).join('');
+                    list.innerHTML = filteredStops.map(stop => `<li class="px-4 py-2 hover:bg-blue-900/50 cursor-pointer text-gray-200">${stop}</li>`).join('');
                 } else {
-                    list.innerHTML = `<li class="px-4 py-2 text-gray-500 dark:text-gray-400">Nenhuma paragem encontrada.</li>`;
+                    list.innerHTML = `<li class="px-4 py-2 text-gray-400">Nenhuma paragem encontrada.</li>`;
                 }
                 list.classList.remove('hidden');
             };
@@ -769,13 +755,7 @@
 
             // --- INITIALIZATION ---
             const initializeApp = () => {
-                // 1. Load Theme
-                const storedTheme = localStorage.getItem('theme');
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                theme = storedTheme ? storedTheme : (prefersDark ? 'dark' : 'light');
-                applyTheme();
-                
-                // 2. Load Favorites
+                // 1. Load Favorites
                 setTimeout(() => {
                     try {
                         const storedFavorites = localStorage.getItem('bus36Favorites');
@@ -792,9 +772,8 @@
                     }
                 }, 500);
 
-                // 3. Render initial UI
+                // 2. Render initial UI
                 busIconContainer.innerHTML = busIcon();
-                renderThemeToggle();
                 renderBottomNav();
                 renderFavorites();
                 renderResults();
